@@ -1,0 +1,1739 @@
+<!doctype html>
+<html lang="id">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generator Skor Acak Siswa</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    .container {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .step-indicator {
+      transition: all 0.3s ease;
+    }
+    
+    .step-indicator.active {
+      transform: scale(1.1);
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .table-container {
+      overflow-x: auto;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    
+    .score-table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 600px;
+    }
+    
+    .score-table th,
+    .score-table td {
+      border: 1px solid #e5e7eb;
+      padding: 8px;
+      text-align: center;
+    }
+    
+    .score-table th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    .score-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+    }
+    
+    .score-table th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 15;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="w-full min-h-full">
+  <div class="w-full min-h-full" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+   <div class="container w-full px-6 py-8">
+    <div class="max-w-6xl mx-auto"><!-- Header -->
+     <div class="text-center mb-8">
+      <h1 id="app-title" class="text-4xl font-bold text-white mb-2">Generator Skor Acak Siswa</h1>
+      <p class="text-white text-opacity-90">Buat skor random untuk evaluasi siswa secara otomatis</p>
+     </div><!-- Version Selection -->
+     <div id="version-selection" class="bg-white rounded-xl shadow-2xl p-8 mb-8 fade-in">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Pilih Versi Generator</h2>
+      <div class="grid md:grid-cols-2 gap-6"><button id="btn-version-1" class="bg-gradient-to-br from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white p-6 rounded-xl shadow-lg transition duration-200 transform hover:scale-105">
+        <div class="text-5xl mb-3">
+         📊
+        </div><h3 class="text-xl font-bold mb-2">Versi 1: Skor Numerik</h3><p class="text-white text-opacity-90 mb-3 text-sm">Generate skor angka untuk setiap soal dengan total nilai target</p>
+        <div class="bg-white bg-opacity-20 rounded-lg p-2 text-xs"><strong>Fitur:</strong> Input skor maksimal per soal, nilai akhir target, hasil berupa angka
+        </div></button> <button id="btn-version-2" class="bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white p-6 rounded-xl shadow-lg transition duration-200 transform hover:scale-105">
+        <div class="text-5xl mb-3">
+         ✅
+        </div><h3 class="text-xl font-bold mb-2">Versi 2: Jawaban Pilihan Ganda</h3><p class="text-white text-opacity-90 mb-3 text-sm">Generate jawaban A,B,C,D,E dengan kunci jawaban dan target benar</p>
+        <div class="bg-white bg-opacity-20 rounded-lg p-2 text-xs"><strong>Fitur:</strong> Input kunci jawaban, target jumlah benar, hasil berupa A/B/C/D/E
+        </div></button> <button id="btn-version-3" class="bg-gradient-to-br from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white p-6 rounded-xl shadow-lg transition duration-200 transform hover:scale-105">
+        <div class="text-5xl mb-3">
+         📈
+        </div><h3 class="text-xl font-bold mb-2">Versi 3: Skor Naik Turun</h3><p class="text-white text-opacity-90 mb-3 text-sm">Generate skor yang naik-turun ±10 dari target (variasi natural)</p>
+        <div class="bg-white bg-opacity-20 rounded-lg p-2 text-xs"><strong>Fitur:</strong> Skor per KD fluktuasi ±10 dari target, max 99, lebih realistis
+        </div></button> <button id="btn-version-4" class="bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white p-6 rounded-xl shadow-lg transition duration-200 transform hover:scale-105">
+        <div class="text-5xl mb-3">
+         ⚖️
+        </div><h3 class="text-xl font-bold mb-2">Versi 4: Pembobotan UH &amp; Tes</h3><p class="text-white text-opacity-90 mb-3 text-sm">Generate nilai UH per KD + 1 Tes Akhir dengan pembobotan %</p>
+        <div class="bg-white bg-opacity-20 rounded-lg p-2 text-xs"><strong>Fitur:</strong> UH per KD + 1 Tes, bobot %, nilai rata-rata tertimbang
+        </div></button>
+      </div>
+     </div><!-- Step Indicator -->
+     <div id="step-indicators" class="flex justify-center mb-8 gap-4 hidden">
+      <div id="step-1-indicator" class="step-indicator active flex items-center gap-2 bg-white bg-opacity-20 px-4 py-2 rounded-lg text-white"><span class="w-8 h-8 rounded-full bg-white text-purple-600 flex items-center justify-center font-bold">1</span> <span class="font-semibold">Pengaturan</span>
+      </div>
+      <div id="step-2-indicator" class="step-indicator flex items-center gap-2 bg-white bg-opacity-10 px-4 py-2 rounded-lg text-white"><span class="w-8 h-8 rounded-full bg-white bg-opacity-30 flex items-center justify-center font-bold">2</span> <span id="step-2-label" class="font-semibold">Input Nilai</span>
+      </div>
+      <div id="step-3-indicator" class="step-indicator flex items-center gap-2 bg-white bg-opacity-10 px-4 py-2 rounded-lg text-white"><span class="w-8 h-8 rounded-full bg-white bg-opacity-30 flex items-center justify-center font-bold">3</span> <span class="font-semibold">Hasil</span>
+      </div>
+     </div><!-- Step 1: Setup -->
+     <div id="step-1" class="bg-white rounded-xl shadow-2xl p-8 fade-in">
+      <h2 id="step1-title" class="text-2xl font-bold text-gray-800 mb-6">Langkah 1: Pengaturan Awal</h2>
+      <div class="grid md:grid-cols-3 gap-6 mb-6">
+       <div><label for="num-questions" class="block text-gray-700 font-semibold mb-2">Jumlah Soal (1-20)</label> <input type="number" id="num-questions" min="1" max="20" value="5" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+       </div>
+       <div><label for="max-score" class="block text-gray-700 font-semibold mb-2">Skor Maksimal per Soal</label> <input type="number" id="max-score" min="1" max="100" value="10" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+       </div>
+       <div><label for="num-students" class="block text-gray-700 font-semibold mb-2">Jumlah Siswa (1-40)</label> <input type="number" id="num-students" min="1" max="40" value="5" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+       </div>
+      </div><button id="btn-next-step1" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> Lanjut ke Input Nilai Akhir → </button>
+     </div><!-- Step 1 Version 2: Setup for Multiple Choice -->
+     <div id="step-1-v2" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Langkah 1: Pengaturan Soal Pilihan Ganda</h2>
+      <div class="grid md:grid-cols-2 gap-6 mb-6">
+       <div><label for="num-questions-v2" class="block text-gray-700 font-semibold mb-2">Jumlah Soal (1-50)</label> <input type="number" id="num-questions-v2" min="1" max="50" value="10" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
+       </div>
+       <div><label for="num-students-v2" class="block text-gray-700 font-semibold mb-2">Jumlah Siswa (1-40)</label> <input type="number" id="num-students-v2" min="1" max="40" value="5" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
+       </div>
+      </div>
+      <div class="mb-6"><label class="block text-gray-700 font-semibold mb-3">Kunci Jawaban Setiap Soal:</label>
+       <div id="answer-keys-container" class="grid grid-cols-5 gap-3 max-h-96 overflow-y-auto p-4 bg-gray-50 rounded-lg border-2 border-gray-200"><!-- Answer keys will be generated here -->
+       </div>
+      </div>
+      <div class="flex gap-4"><button id="btn-back-v2-step1" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali ke Menu </button> <button id="btn-next-v2-step1" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> Lanjut ke Input Target → </button>
+      </div>
+     </div><!-- Step 1 Version 4: Setup for Weighted Scores -->
+     <div id="step-1-v4" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Langkah 1: Pengaturan Pembobotan Nilai</h2>
+      <div class="mb-6 p-4 bg-orange-50 rounded-lg border-2 border-orange-300">
+       <h3 class="font-bold text-gray-800 mb-2">ℹ️ Cara Kerja Versi 4:</h3>
+       <ul class="text-sm text-gray-700 space-y-1 list-disc list-inside">
+        <li>Buat skor <strong>Ulangan Harian (UH)</strong> per KD yang naik-turun ±10 dari target</li>
+        <li>Buat <strong>1 nilai Tes Akhir</strong> yang juga naik-turun ±10 dari target</li>
+        <li>Tentukan <strong>bobot pembobotan</strong>: contoh 60% UH + 40% Tes = 100%</li>
+        <li><strong>Nilai Akhir = (Rata-rata UH × 60%) + (Tes × 40%)</strong></li>
+        <li>Total bobot harus tepat = <strong>100%</strong></li>
+        <li>Nilai akhir akan <strong>mendekati target</strong> (selisih ≈ 0)</li>
+       </ul>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6 mb-6">
+       <div><label for="num-kd-v4" class="block text-gray-700 font-semibold mb-2">Jumlah KD (1-20)</label> <input type="number" id="num-kd-v4" min="1" max="20" value="3" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none">
+       </div>
+       <div><label for="num-students-v4" class="block text-gray-700 font-semibold mb-2">Jumlah Siswa (1-40)</label> <input type="number" id="num-students-v4" min="1" max="40" value="5" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none">
+       </div>
+       <div><label for="kkm-v4" class="block text-gray-700 font-semibold mb-2">KKM (0-100)</label> <input type="number" id="kkm-v4" min="0" max="100" value="70" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none">
+       </div>
+      </div>
+      <div class="mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border-2 border-orange-300">
+       <h3 class="font-bold text-gray-800 mb-3">⚖️ Pembobotan Nilai:</h3>
+       <div class="grid md:grid-cols-2 gap-6">
+        <div><label for="weight-uh-v4" class="block text-gray-700 font-semibold mb-2">Bobot UH (%)</label> <input type="number" id="weight-uh-v4" min="0" max="100" value="60" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none">
+        </div>
+        <div><label for="weight-ta-v4" class="block text-gray-700 font-semibold mb-2">Bobot Tes Akhir (%)</label> <input type="number" id="weight-ta-v4" min="0" max="100" value="40" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none">
+        </div>
+       </div>
+       <p id="weight-total-v4" class="mt-3 text-center font-bold text-lg text-orange-600">Total: 100%</p>
+      </div>
+      <div class="flex gap-4"><button id="btn-back-v4-step1" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali ke Menu </button> <button id="btn-next-v4-step1" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> Lanjut ke Input Target → </button>
+      </div>
+     </div><!-- Step 1 Version 3: Setup for Fluctuating Scores -->
+     <div id="step-1-v3" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Langkah 1: Pengaturan Skor Naik Turun</h2>
+      <div class="mb-6 p-4 bg-green-50 rounded-lg border-2 border-green-300">
+       <h3 class="font-bold text-gray-800 mb-2">ℹ️ Cara Kerja Versi 3:</h3>
+       <ul class="text-sm text-gray-700 space-y-1 list-disc list-inside">
+        <li>Setiap KD akan mendapat skor yang <strong>naik-turun ±10</strong> dari target</li>
+        <li>Contoh: Target 75, KKM 70, 3 KD → Total = 225, Rata-rata = 75.0</li>
+        <li><strong>Total skor = Target × Jumlah KD</strong> (rata-rata pasti = target)</li>
+        <li>Setiap skor KD: <strong>KKM ≤ Skor ≤ 100</strong></li>
+        <li>Skor akan otomatis disesuaikan agar memenuhi batasan KKM dan maksimal 100</li>
+       </ul>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6 mb-6">
+       <div><label for="num-kd-v3" class="block text-gray-700 font-semibold mb-2">Jumlah KD (1-20)</label> <input type="number" id="num-kd-v3" min="1" max="20" value="3" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none">
+       </div>
+       <div><label for="num-students-v3" class="block text-gray-700 font-semibold mb-2">Jumlah Siswa (1-40)</label> <input type="number" id="num-students-v3" min="1" max="40" value="5" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none">
+       </div>
+       <div><label for="kkm-v3" class="block text-gray-700 font-semibold mb-2">KKM (0-100)</label> <input type="number" id="kkm-v3" min="0" max="100" value="70" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none">
+       </div>
+      </div>
+      <div class="flex gap-4"><button id="btn-back-v3-step1" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali ke Menu </button> <button id="btn-next-v3-step1" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> Lanjut ke Input Target → </button>
+      </div>
+     </div><!-- Step 2: Input Final Scores -->
+     <div id="step-2" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 id="step2-title" class="text-2xl font-bold text-gray-800 mb-6">Langkah 2: Input Nilai Akhir Siswa</h2><!-- Import Excel Section -->
+      <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-300">
+       <div class="flex items-center justify-between mb-3">
+        <div>
+         <h3 class="text-lg font-bold text-gray-800">📊 Import dari Excel</h3>
+         <p class="text-sm text-gray-600">Upload file Excel dengan format: Nama | Nilai</p>
+        </div><label for="excel-upload" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-200 shadow-lg"> 📁 Pilih File Excel </label> <input type="file" id="excel-upload" accept=".xlsx,.xls,.csv" class="hidden">
+       </div>
+       <div id="import-status" class="text-sm text-gray-600 hidden"></div>
+      </div>
+      <div id="student-inputs" class="space-y-4 mb-6 max-h-96 overflow-y-auto pr-2"><!-- Student inputs will be generated here -->
+      </div>
+      <div class="flex gap-4"><button id="btn-back-step2" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali </button> <button id="btn-generate" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> Generate Skor Acak 🎲 </button>
+      </div>
+     </div><!-- Step 2 Version 2: Input Target Correct Answers -->
+     <div id="step-2-v2" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Langkah 2: Input Target Jawaban Benar</h2><!-- Import Excel Section V2 -->
+      <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-blue-300">
+       <div class="flex items-center justify-between mb-3">
+        <div>
+         <h3 class="text-lg font-bold text-gray-800">📊 Import dari Excel</h3>
+         <p class="text-sm text-gray-600">Upload file Excel dengan format: Nama | Target Benar</p>
+        </div><label for="excel-upload-v2" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-200 shadow-lg"> 📁 Pilih File Excel </label> <input type="file" id="excel-upload-v2" accept=".xlsx,.xls,.csv" class="hidden">
+       </div>
+       <div id="import-status-v2" class="text-sm text-gray-600 hidden"></div>
+      </div>
+      <div id="student-inputs-v2" class="space-y-4 mb-6 max-h-96 overflow-y-auto pr-2"><!-- Student inputs will be generated here -->
+      </div>
+      <div class="flex gap-4"><button id="btn-back-v2-step2" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali </button> <button id="btn-generate-v2" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> Generate Jawaban Acak 🎯 </button>
+      </div>
+     </div><!-- Step 2 Version 3: Input Target Scores -->
+     <div id="step-2-v3" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Langkah 2: Input Target Skor Siswa</h2><!-- Import Excel Section V3 -->
+      <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-300">
+       <div class="flex items-center justify-between mb-3">
+        <div>
+         <h3 class="text-lg font-bold text-gray-800">📊 Import dari Excel</h3>
+         <p class="text-sm text-gray-600">Upload file Excel dengan format: Nama | Target Skor</p>
+        </div><label for="excel-upload-v3" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-200 shadow-lg"> 📁 Pilih File Excel </label> <input type="file" id="excel-upload-v3" accept=".xlsx,.xls,.csv" class="hidden">
+       </div>
+       <div id="import-status-v3" class="text-sm text-gray-600 hidden"></div>
+      </div>
+      <div id="student-inputs-v3" class="space-y-4 mb-6 max-h-96 overflow-y-auto pr-2"><!-- Student inputs will be generated here -->
+      </div>
+      <div class="flex gap-4"><button id="btn-back-v3-step2" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali </button> <button id="btn-generate-v3" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> Generate Skor Naik Turun 📈 </button>
+      </div>
+     </div><!-- Step 3: Results -->
+     <div id="step-3" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 id="step3-title" class="text-2xl font-bold text-gray-800 mb-6">Langkah 3: Hasil Skor Acak</h2>
+      <div class="mb-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+       <p class="text-gray-700"><span class="font-bold">Tips:</span> Scroll horizontal/vertikal untuk melihat semua data. Klik tombol Copy untuk menyalin ke Excel.</p>
+      </div>
+      <div class="table-container mb-6 border-2 border-gray-200 rounded-lg">
+       <table id="results-table" class="score-table"><!-- Table will be generated here -->
+       </table>
+      </div>
+      <div class="flex gap-4"><button id="btn-back-step3" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali </button> <button id="btn-copy-table" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> 📋 Copy Tabel ke Excel </button> <button id="btn-reset" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> 🔄 Buat Baru </button>
+      </div>
+     </div><!-- Step 3 Version 2: Results Multiple Choice -->
+     <div id="step-3-v2" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Langkah 3: Hasil Jawaban Pilihan Ganda</h2>
+      <div class="mb-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+       <p class="text-gray-700"><span class="font-bold">Tips:</span> Scroll horizontal/vertikal untuk melihat semua data. Klik tombol Copy untuk menyalin ke Excel.</p>
+      </div>
+      <div class="table-container mb-6 border-2 border-gray-200 rounded-lg">
+       <table id="results-table-v2" class="score-table"><!-- Table will be generated here -->
+       </table>
+      </div>
+      <div class="flex gap-4"><button id="btn-back-v2-step3" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali </button> <button id="btn-copy-table-v2" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> 📋 Copy Tabel ke Excel </button> <button id="btn-reset-v2" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> 🔄 Buat Baru </button>
+      </div>
+     </div><!-- Step 3 Version 3: Results Fluctuating Scores -->
+     <div id="step-3-v3" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Langkah 3: Hasil Skor Naik Turun</h2>
+      <div class="mb-6 p-4 bg-green-50 rounded-lg border-2 border-green-200">
+       <p class="text-gray-700"><span class="font-bold">Tips:</span> Skor setiap KD naik-turun ±10 dari target. Scroll untuk melihat semua data.</p>
+      </div>
+      <div class="table-container mb-6 border-2 border-gray-200 rounded-lg">
+       <table id="results-table-v3" class="score-table"><!-- Table will be generated here -->
+       </table>
+      </div>
+      <div class="flex gap-4"><button id="btn-back-v3-step3" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali </button> <button id="btn-copy-table-v3" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> 📋 Copy Tabel ke Excel </button> <button id="btn-reset-v3" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> 🔄 Buat Baru </button>
+      </div>
+     </div><!-- Step 2 Version 4: Input Target Scores -->
+     <div id="step-2-v4" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Langkah 2: Input Target Nilai Akhir Siswa</h2><!-- Import Excel Section V4 -->
+      <div class="mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border-2 border-orange-300">
+       <div class="flex items-center justify-between mb-3">
+        <div>
+         <h3 class="text-lg font-bold text-gray-800">📊 Import dari Excel</h3>
+         <p class="text-sm text-gray-600">Upload file Excel dengan format: Nama | Target Nilai Akhir</p>
+        </div><label for="excel-upload-v4" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-200 shadow-lg"> 📁 Pilih File Excel </label> <input type="file" id="excel-upload-v4" accept=".xlsx,.xls,.csv" class="hidden">
+       </div>
+       <div id="import-status-v4" class="text-sm text-gray-600 hidden"></div>
+      </div>
+      <div id="student-inputs-v4" class="space-y-4 mb-6 max-h-96 overflow-y-auto pr-2"><!-- Student inputs will be generated here -->
+      </div>
+      <div class="flex gap-4"><button id="btn-back-v4-step2" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali </button> <button id="btn-generate-v4" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> Generate Nilai Tertimbang ⚖️ </button>
+      </div>
+     </div><!-- Step 3 Version 4: Results Weighted Scores -->
+     <div id="step-3-v4" class="bg-white rounded-xl shadow-2xl p-8 fade-in hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Langkah 3: Hasil Nilai dengan Pembobotan</h2>
+      <div class="mb-6 p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+       <p class="text-gray-700"><span class="font-bold">Tips:</span> Nilai UH per KD + 1 Tes Akhir dihitung dengan pembobotan. Scroll untuk melihat semua data.</p>
+      </div>
+      <div class="table-container mb-6 border-2 border-gray-200 rounded-lg">
+       <table id="results-table-v4" class="score-table"><!-- Table will be generated here -->
+       </table>
+      </div>
+      <div class="flex gap-4"><button id="btn-back-v4-step3" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-lg transition duration-200"> ← Kembali </button> <button id="btn-copy-table-v4" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> 📋 Copy Tabel ke Excel </button> <button id="btn-reset-v4" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-lg transition duration-200 shadow-lg"> 🔄 Buat Baru </button>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      app_title: "Generator Skor Acak Siswa",
+      step1_title: "Langkah 1: Pengaturan Awal",
+      step2_title: "Langkah 2: Input Nilai Akhir Siswa",
+      step3_title: "Langkah 3: Hasil Skor Acak"
+    };
+
+    let config = { ...defaultConfig };
+    let currentVersion = null;
+    let currentStep = 1;
+    let setupData = {};
+    let studentFinalScores = [];
+    let generatedScores = [];
+    
+    let answerKeys = [];
+    let studentTargetCorrect = [];
+    let generatedAnswers = [];
+    
+    let studentTargetScoresV3 = [];
+    let generatedScoresV3 = [];
+    
+    let studentTargetScoresV4 = [];
+    let generatedScoresV4 = [];
+    let weightUH = 60;
+    let weightTA = 40;
+
+    async function onConfigChange(newConfig) {
+      config = { ...config, ...newConfig };
+      
+      document.getElementById('app-title').textContent = config.app_title || defaultConfig.app_title;
+      document.getElementById('step1-title').textContent = config.step1_title || defaultConfig.step1_title;
+      document.getElementById('step2-title').textContent = config.step2_title || defaultConfig.step2_title;
+      document.getElementById('step3-title').textContent = config.step3_title || defaultConfig.step3_title;
+    }
+
+    function mapToCapabilities(cfg) {
+      return {
+        recolorables: [],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      };
+    }
+
+    function mapToEditPanelValues(cfg) {
+      return new Map([
+        ["app_title", cfg.app_title || defaultConfig.app_title],
+        ["step1_title", cfg.step1_title || defaultConfig.step1_title],
+        ["step2_title", cfg.step2_title || defaultConfig.step2_title],
+        ["step3_title", cfg.step3_title || defaultConfig.step3_title]
+      ]);
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    }
+
+    function showStep(step, version = currentVersion) {
+      document.getElementById('version-selection').classList.add('hidden');
+      
+      document.getElementById('step-1').classList.add('hidden');
+      document.getElementById('step-2').classList.add('hidden');
+      document.getElementById('step-3').classList.add('hidden');
+      
+      document.getElementById('step-1-v2').classList.add('hidden');
+      document.getElementById('step-2-v2').classList.add('hidden');
+      document.getElementById('step-3-v2').classList.add('hidden');
+      
+      document.getElementById('step-1-v3').classList.add('hidden');
+      document.getElementById('step-2-v3').classList.add('hidden');
+      document.getElementById('step-3-v3').classList.add('hidden');
+      
+      document.getElementById('step-1-v4').classList.add('hidden');
+      document.getElementById('step-2-v4').classList.add('hidden');
+      document.getElementById('step-3-v4').classList.add('hidden');
+      
+      document.getElementById('step-indicators').classList.remove('hidden');
+      
+      if (version === 1) {
+        document.getElementById(`step-${step}`).classList.remove('hidden');
+      } else if (version === 2) {
+        document.getElementById(`step-${step}-v2`).classList.remove('hidden');
+      } else if (version === 3) {
+        document.getElementById(`step-${step}-v3`).classList.remove('hidden');
+      } else if (version === 4) {
+        document.getElementById(`step-${step}-v4`).classList.remove('hidden');
+      }
+      
+      document.getElementById('step-1-indicator').classList.remove('active');
+      document.getElementById('step-2-indicator').classList.remove('active');
+      document.getElementById('step-3-indicator').classList.remove('active');
+      
+      if (step <= 3) {
+        document.getElementById(`step-${step}-indicator`).classList.add('active');
+      }
+      
+      currentStep = step;
+      currentVersion = version;
+    }
+    
+    function showVersionSelection() {
+      document.getElementById('step-1').classList.add('hidden');
+      document.getElementById('step-2').classList.add('hidden');
+      document.getElementById('step-3').classList.add('hidden');
+      document.getElementById('step-1-v2').classList.add('hidden');
+      document.getElementById('step-2-v2').classList.add('hidden');
+      document.getElementById('step-3-v2').classList.add('hidden');
+      document.getElementById('step-1-v3').classList.add('hidden');
+      document.getElementById('step-2-v3').classList.add('hidden');
+      document.getElementById('step-3-v3').classList.add('hidden');
+      document.getElementById('step-1-v4').classList.add('hidden');
+      document.getElementById('step-2-v4').classList.add('hidden');
+      document.getElementById('step-3-v4').classList.add('hidden');
+      
+      document.getElementById('step-indicators').classList.add('hidden');
+      
+      document.getElementById('version-selection').classList.remove('hidden');
+      
+      currentVersion = null;
+      currentStep = 0;
+    }
+
+    function generateStudentInputs() {
+      const numStudents = parseInt(document.getElementById('num-students').value);
+      const container = document.getElementById('student-inputs');
+      container.innerHTML = '';
+      
+      for (let i = 1; i <= numStudents; i++) {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-4 bg-gray-50 p-4 rounded-lg';
+        div.innerHTML = `
+          <label for="student-${i}" class="font-semibold text-gray-700 w-32">Siswa ${i}:</label>
+          <input type="text" id="student-name-${i}" placeholder="Nama siswa" class="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+          <input type="number" id="student-score-${i}" placeholder="Nilai akhir" min="0" max="100" class="w-32 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+        `;
+        container.appendChild(div);
+      }
+    }
+    
+    function handleExcelImport(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          
+          const studentData = [];
+          for (let i = 1; i < jsonData.length; i++) {
+            const row = jsonData[i];
+            if (row[0] && row[1] !== undefined) {
+              studentData.push({
+                name: String(row[0]).trim(),
+                score: parseFloat(row[1]) || 0
+              });
+            }
+          }
+          
+          if (studentData.length === 0) {
+            showImportStatus('❌ Tidak ada data valid di file Excel!', true);
+            return;
+          }
+          
+          const numStudents = parseInt(document.getElementById('num-students').value);
+          const limitedData = studentData.slice(0, numStudents);
+          
+          limitedData.forEach((student, index) => {
+            const nameInput = document.getElementById(`student-name-${index + 1}`);
+            const scoreInput = document.getElementById(`student-score-${index + 1}`);
+            if (nameInput && scoreInput) {
+              nameInput.value = student.name;
+              scoreInput.value = student.score;
+            }
+          });
+          
+          showImportStatus(`✓ Berhasil import ${limitedData.length} data dari Excel!`, false);
+          
+        } catch (error) {
+          showImportStatus('❌ Gagal membaca file Excel! Pastikan format benar.', true);
+        }
+      };
+      
+      reader.readAsArrayBuffer(file);
+      event.target.value = '';
+    }
+    
+    function showImportStatus(message, isError) {
+      const statusDiv = document.getElementById('import-status');
+      statusDiv.textContent = message;
+      statusDiv.className = `text-sm font-semibold ${isError ? 'text-red-600' : 'text-green-600'}`;
+      statusDiv.classList.remove('hidden');
+      
+      setTimeout(() => {
+        statusDiv.classList.add('hidden');
+      }, 5000);
+    }
+
+    function collectStudentData() {
+      const numStudents = parseInt(document.getElementById('num-students').value);
+      studentFinalScores = [];
+      
+      for (let i = 1; i <= numStudents; i++) {
+        const name = document.getElementById(`student-name-${i}`).value || `Siswa ${i}`;
+        const finalScore = parseFloat(document.getElementById(`student-score-${i}`).value) || 0;
+        studentFinalScores.push({ name, finalScore });
+      }
+    }
+
+    function generateRandomScores() {
+      const numQuestions = setupData.numQuestions;
+      const maxScore = setupData.maxScore;
+      const numStudents = setupData.numStudents;
+      
+      generatedScores = [];
+      
+      for (let i = 0; i < numStudents; i++) {
+        const student = studentFinalScores[i];
+        const targetScore = Math.round(student.finalScore);
+        const questionScores = [];
+        let totalAllocated = 0;
+        
+        for (let j = 0; j < numQuestions - 1; j++) {
+          const remaining = targetScore - totalAllocated;
+          const questionsLeft = numQuestions - j;
+          
+          const maxPossible = Math.min(maxScore, remaining);
+          const minPossible = Math.max(0, remaining - (maxScore * (questionsLeft - 1)));
+          
+          const randomScore = Math.floor(Math.random() * (maxPossible - minPossible + 1)) + minPossible;
+          
+          questionScores.push(randomScore);
+          totalAllocated += randomScore;
+        }
+        
+        const lastScore = targetScore - totalAllocated;
+        
+        if (lastScore < 0 || lastScore > maxScore) {
+          const validLastScore = Math.max(0, Math.min(maxScore, lastScore));
+          const adjustment = lastScore - validLastScore;
+          
+          if (questionScores.length > 0 && adjustment !== 0) {
+            questionScores[questionScores.length - 1] += adjustment;
+            questionScores[questionScores.length - 1] = Math.max(0, Math.min(maxScore, questionScores[questionScores.length - 1]));
+          }
+          
+          questionScores.push(validLastScore);
+        } else {
+          questionScores.push(lastScore);
+        }
+        
+        const actualTotal = questionScores.reduce((sum, score) => sum + score, 0);
+        
+        generatedScores.push({
+          name: student.name,
+          scores: questionScores,
+          total: actualTotal,
+          targetTotal: targetScore
+        });
+      }
+    }
+
+    function displayResults() {
+      const table = document.getElementById('results-table');
+      const numQuestions = setupData.numQuestions;
+      
+      let html = '<thead><tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">';
+      html += '<th>Nama Siswa</th>';
+      
+      for (let i = 1; i <= numQuestions; i++) {
+        html += `<th>Soal ${i}</th>`;
+      }
+      
+      html += '<th>Total</th><th>Target</th><th>Selisih</th></tr></thead><tbody>';
+      
+      generatedScores.forEach((student, index) => {
+        const bgColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
+        html += `<tr style="background-color: ${bgColor};">`;
+        html += `<td style="background-color: ${bgColor}; font-weight: bold; text-align: left; padding-left: 12px;">${student.name}</td>`;
+        
+        student.scores.forEach(score => {
+          html += `<td>${score}</td>`;
+        });
+        
+        const diff = student.total - student.targetTotal;
+        const diffColor = Math.abs(diff) === 0 ? '#10b981' : '#ef4444';
+        
+        html += `<td style="font-weight: bold; color: #667eea;">${student.total}</td>`;
+        html += `<td style="font-weight: bold;">${student.targetTotal}</td>`;
+        html += `<td style="font-weight: bold; color: ${diffColor};">${diff >= 0 ? '+' : ''}${diff}</td>`;
+        html += '</tr>';
+      });
+      
+      html += '</tbody>';
+      table.innerHTML = html;
+    }
+
+    function copyTableToClipboard() {
+      const numQuestions = setupData.numQuestions;
+      let text = 'Nama Siswa\t';
+      
+      for (let i = 1; i <= numQuestions; i++) {
+        text += `Soal ${i}\t`;
+      }
+      text += 'Total\tTarget\tSelisih\n';
+      
+      generatedScores.forEach(student => {
+        text += `${student.name}\t`;
+        student.scores.forEach(score => {
+          text += `${score}\t`;
+        });
+        const diff = student.total - student.targetTotal;
+        text += `${student.total}\t${student.targetTotal}\t${diff}\n`;
+      });
+      
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        textArea.remove();
+        showCopyMessage('✓ Data berhasil di-copy! Paste ke Excel dengan Ctrl+V atau Cmd+V');
+      } catch (err) {
+        textArea.remove();
+        showCopyMessage('❌ Gagal copy. Coba lagi atau gunakan browser lain.', true);
+      }
+    }
+    
+    function generateAnswerKeyInputs() {
+      const numQuestions = parseInt(document.getElementById('num-questions-v2').value);
+      const container = document.getElementById('answer-keys-container');
+      container.innerHTML = '';
+      
+      for (let i = 1; i <= numQuestions; i++) {
+        const div = document.createElement('div');
+        div.className = 'flex flex-col items-center gap-2 bg-white p-3 rounded-lg border-2 border-gray-300';
+        div.innerHTML = `
+          <label class="font-semibold text-gray-700 text-sm">Soal ${i}</label>
+          <select id="answer-key-${i}" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-bold text-center">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+          </select>
+        `;
+        container.appendChild(div);
+      }
+    }
+    
+    function generateStudentInputsV2() {
+      const numStudents = parseInt(document.getElementById('num-students-v2').value);
+      const numQuestions = parseInt(document.getElementById('num-questions-v2').value);
+      const container = document.getElementById('student-inputs-v2');
+      container.innerHTML = '';
+      
+      for (let i = 1; i <= numStudents; i++) {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-4 bg-gray-50 p-4 rounded-lg';
+        div.innerHTML = `
+          <label class="font-semibold text-gray-700 w-32">Siswa ${i}:</label>
+          <input type="text" id="student-name-v2-${i}" placeholder="Nama siswa" class="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
+          <input type="number" id="student-target-v2-${i}" placeholder="Target benar" min="0" max="${numQuestions}" value="${numQuestions}" class="w-32 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
+          <span class="text-gray-600 text-sm">/ ${numQuestions}</span>
+        `;
+        container.appendChild(div);
+      }
+    }
+    
+    function handleExcelImportV2(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          
+          const studentData = [];
+          for (let i = 1; i < jsonData.length; i++) {
+            const row = jsonData[i];
+            if (row[0] && row[1] !== undefined) {
+              studentData.push({
+                name: String(row[0]).trim(),
+                target: parseInt(row[1]) || 0
+              });
+            }
+          }
+          
+          if (studentData.length === 0) {
+            showImportStatusV2('❌ Tidak ada data valid di file Excel!', true);
+            return;
+          }
+          
+          const numStudents = parseInt(document.getElementById('num-students-v2').value);
+          const limitedData = studentData.slice(0, numStudents);
+          
+          limitedData.forEach((student, index) => {
+            const nameInput = document.getElementById(`student-name-v2-${index + 1}`);
+            const targetInput = document.getElementById(`student-target-v2-${index + 1}`);
+            if (nameInput && targetInput) {
+              nameInput.value = student.name;
+              targetInput.value = student.target;
+            }
+          });
+          
+          showImportStatusV2(`✓ Berhasil import ${limitedData.length} data dari Excel!`, false);
+          
+        } catch (error) {
+          showImportStatusV2('❌ Gagal membaca file Excel! Pastikan format benar.', true);
+        }
+      };
+      
+      reader.readAsArrayBuffer(file);
+      event.target.value = '';
+    }
+    
+    function showImportStatusV2(message, isError) {
+      const statusDiv = document.getElementById('import-status-v2');
+      statusDiv.textContent = message;
+      statusDiv.className = `text-sm font-semibold ${isError ? 'text-red-600' : 'text-green-600'}`;
+      statusDiv.classList.remove('hidden');
+      
+      setTimeout(() => {
+        statusDiv.classList.add('hidden');
+      }, 5000);
+    }
+    
+    function collectAnswerKeys() {
+      const numQuestions = parseInt(document.getElementById('num-questions-v2').value);
+      answerKeys = [];
+      
+      for (let i = 1; i <= numQuestions; i++) {
+        const key = document.getElementById(`answer-key-${i}`).value;
+        answerKeys.push(key);
+      }
+    }
+    
+    function collectStudentDataV2() {
+      const numStudents = parseInt(document.getElementById('num-students-v2').value);
+      studentTargetCorrect = [];
+      
+      for (let i = 1; i <= numStudents; i++) {
+        const name = document.getElementById(`student-name-v2-${i}`).value || `Siswa ${i}`;
+        const targetCorrect = parseInt(document.getElementById(`student-target-v2-${i}`).value) || 0;
+        studentTargetCorrect.push({ name, targetCorrect });
+      }
+    }
+    
+    function generateRandomAnswers() {
+      const numQuestions = answerKeys.length;
+      const numStudents = studentTargetCorrect.length;
+      const choices = ['A', 'B', 'C', 'D', 'E'];
+      
+      generatedAnswers = [];
+      
+      for (let i = 0; i < numStudents; i++) {
+        const student = studentTargetCorrect[i];
+        const targetCorrect = student.targetCorrect;
+        const answers = [];
+        
+        const questionIndices = Array.from({ length: numQuestions }, (_, i) => i);
+        
+        for (let j = questionIndices.length - 1; j > 0; j--) {
+          const k = Math.floor(Math.random() * (j + 1));
+          [questionIndices[j], questionIndices[k]] = [questionIndices[k], questionIndices[j]];
+        }
+        
+        const correctIndices = new Set(questionIndices.slice(0, targetCorrect));
+        
+        for (let j = 0; j < numQuestions; j++) {
+          if (correctIndices.has(j)) {
+            answers.push(answerKeys[j]);
+          } else {
+            const wrongChoices = choices.filter(c => c !== answerKeys[j]);
+            const randomWrong = wrongChoices[Math.floor(Math.random() * wrongChoices.length)];
+            answers.push(randomWrong);
+          }
+        }
+        
+        let actualCorrect = 0;
+        for (let j = 0; j < numQuestions; j++) {
+          if (answers[j] === answerKeys[j]) {
+            actualCorrect++;
+          }
+        }
+        
+        generatedAnswers.push({
+          name: student.name,
+          answers: answers,
+          correct: actualCorrect,
+          targetCorrect: targetCorrect
+        });
+      }
+    }
+    
+    function displayResultsV2() {
+      const table = document.getElementById('results-table-v2');
+      const numQuestions = answerKeys.length;
+      
+      let html = '<thead><tr style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white;">';
+      html += '<th>Nama Siswa</th>';
+      
+      for (let i = 1; i <= numQuestions; i++) {
+        html += `<th>No.${i}<br/><small>(${answerKeys[i-1]})</small></th>`;
+      }
+      
+      html += '<th>Benar</th><th>Salah</th><th>Target</th><th>Status</th></tr></thead><tbody>';
+      
+      generatedAnswers.forEach((student, index) => {
+        const bgColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
+        html += `<tr style="background-color: ${bgColor};">`;
+        html += `<td style="background-color: ${bgColor}; font-weight: bold; text-align: left; padding-left: 12px;">${student.name}</td>`;
+        
+        student.answers.forEach((answer, idx) => {
+          const isCorrect = answer === answerKeys[idx];
+          const cellColor = isCorrect ? '#dcfce7' : '#fee2e2';
+          const textColor = isCorrect ? '#16a34a' : '#dc2626';
+          html += `<td style="background-color: ${cellColor}; color: ${textColor}; font-weight: bold;">${answer}</td>`;
+        });
+        
+        const wrong = numQuestions - student.correct;
+        const statusColor = student.correct === student.targetCorrect ? '#10b981' : '#ef4444';
+        const statusText = student.correct === student.targetCorrect ? '✓' : '✗';
+        
+        html += `<td style="font-weight: bold; color: #10b981;">${student.correct}</td>`;
+        html += `<td style="font-weight: bold; color: #dc2626;">${wrong}</td>`;
+        html += `<td style="font-weight: bold;">${student.targetCorrect}</td>`;
+        html += `<td style="font-weight: bold; color: ${statusColor}; font-size: 20px;">${statusText}</td>`;
+        html += '</tr>';
+      });
+      
+      html += '</tbody>';
+      table.innerHTML = html;
+    }
+    
+    function copyTableToClipboardV2() {
+      const numQuestions = answerKeys.length;
+      let text = 'Nama Siswa\t';
+      
+      for (let i = 1; i <= numQuestions; i++) {
+        text += `No.${i}(${answerKeys[i-1]})\t`;
+      }
+      text += 'Benar\tSalah\tTarget\tStatus\n';
+      
+      generatedAnswers.forEach(student => {
+        text += `${student.name}\t`;
+        student.answers.forEach(answer => {
+          text += `${answer}\t`;
+        });
+        const wrong = answerKeys.length - student.correct;
+        const status = student.correct === student.targetCorrect ? 'OK' : 'TIDAK SESUAI';
+        text += `${student.correct}\t${wrong}\t${student.targetCorrect}\t${status}\n`;
+      });
+      
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        textArea.remove();
+        showCopyMessage('✓ Data berhasil di-copy! Paste ke Excel dengan Ctrl+V atau Cmd+V');
+      } catch (err) {
+        textArea.remove();
+        showCopyMessage('❌ Gagal copy. Coba lagi atau gunakan browser lain.', true);
+      }
+    }
+    
+    function generateStudentInputsV3() {
+      const numStudents = parseInt(document.getElementById('num-students-v3').value);
+      const container = document.getElementById('student-inputs-v3');
+      container.innerHTML = '';
+      
+      for (let i = 1; i <= numStudents; i++) {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-4 bg-gray-50 p-4 rounded-lg';
+        div.innerHTML = `
+          <label class="font-semibold text-gray-700 w-32">Siswa ${i}:</label>
+          <input type="text" id="student-name-v3-${i}" placeholder="Nama siswa" class="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none">
+          <input type="number" id="student-target-v3-${i}" placeholder="Target skor" min="0" max="99" value="75" class="w-32 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none">
+        `;
+        container.appendChild(div);
+      }
+    }
+    
+    function handleExcelImportV3(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          
+          const studentData = [];
+          for (let i = 1; i < jsonData.length; i++) {
+            const row = jsonData[i];
+            if (row[0] && row[1] !== undefined) {
+              studentData.push({
+                name: String(row[0]).trim(),
+                target: parseFloat(row[1]) || 0
+              });
+            }
+          }
+          
+          if (studentData.length === 0) {
+            showImportStatusV3('❌ Tidak ada data valid di file Excel!', true);
+            return;
+          }
+          
+          const numStudents = parseInt(document.getElementById('num-students-v3').value);
+          const limitedData = studentData.slice(0, numStudents);
+          
+          limitedData.forEach((student, index) => {
+            const nameInput = document.getElementById(`student-name-v3-${index + 1}`);
+            const targetInput = document.getElementById(`student-target-v3-${index + 1}`);
+            if (nameInput && targetInput) {
+              nameInput.value = student.name;
+              targetInput.value = student.target;
+            }
+          });
+          
+          showImportStatusV3(`✓ Berhasil import ${limitedData.length} data dari Excel!`, false);
+          
+        } catch (error) {
+          showImportStatusV3('❌ Gagal membaca file Excel! Pastikan format benar.', true);
+        }
+      };
+      
+      reader.readAsArrayBuffer(file);
+      event.target.value = '';
+    }
+    
+    function showImportStatusV3(message, isError) {
+      const statusDiv = document.getElementById('import-status-v3');
+      statusDiv.textContent = message;
+      statusDiv.className = `text-sm font-semibold ${isError ? 'text-red-600' : 'text-green-600'}`;
+      statusDiv.classList.remove('hidden');
+      
+      setTimeout(() => {
+        statusDiv.classList.add('hidden');
+      }, 5000);
+    }
+    
+    function collectStudentDataV3() {
+      const numStudents = parseInt(document.getElementById('num-students-v3').value);
+      studentTargetScoresV3 = [];
+      
+      for (let i = 1; i <= numStudents; i++) {
+        const name = document.getElementById(`student-name-v3-${i}`).value || `Siswa ${i}`;
+        const targetScore = parseFloat(document.getElementById(`student-target-v3-${i}`).value) || 75;
+        studentTargetScoresV3.push({ name, targetScore });
+      }
+    }
+    
+    function generateFluctuatingScores() {
+      const numKD = parseInt(document.getElementById('num-kd-v3').value);
+      const kkm = parseInt(document.getElementById('kkm-v3').value);
+      const numStudents = studentTargetScoresV3.length;
+      
+      generatedScoresV3 = [];
+      
+      for (let i = 0; i < numStudents; i++) {
+        const student = studentTargetScoresV3[i];
+        const targetScore = student.targetScore;
+        
+        const targetTotal = targetScore * numKD;
+        let kdScores = [];
+        let attempts = 0;
+        const maxAttempts = 100;
+        
+        while (attempts < maxAttempts) {
+          kdScores = [];
+          let currentTotal = 0;
+          
+          for (let j = 0; j < numKD - 1; j++) {
+            const fluctuation = Math.floor(Math.random() * 21) - 10;
+            let score = targetScore + fluctuation;
+            
+            score = Math.max(kkm, Math.min(100, score));
+            
+            kdScores.push(score);
+            currentTotal += score;
+          }
+          
+          const lastScore = targetTotal - currentTotal;
+          
+          if (lastScore >= kkm && lastScore <= 100) {
+            kdScores.push(lastScore);
+            break;
+          }
+          
+          attempts++;
+        }
+        
+        if (attempts >= maxAttempts) {
+          kdScores = [];
+          
+          for (let j = 0; j < numKD; j++) {
+            kdScores.push(targetScore);
+          }
+          
+          const adjustableKDs = Math.min(numKD - 1, 3);
+          for (let j = 0; j < adjustableKDs; j++) {
+            const kdIndex = j;
+            const maxAdjustUp = Math.min(10, 100 - kdScores[kdIndex]);
+            const maxAdjustDown = Math.min(10, kdScores[kdIndex] - kkm);
+            
+            const adjustment = Math.floor(Math.random() * (maxAdjustUp + maxAdjustDown + 1)) - maxAdjustDown;
+            kdScores[kdIndex] += adjustment;
+            
+            kdScores[numKD - 1] -= adjustment;
+            
+            if (kdScores[numKD - 1] < kkm) {
+              const excess = kkm - kdScores[numKD - 1];
+              kdScores[numKD - 1] = kkm;
+              kdScores[kdIndex] -= excess;
+            } else if (kdScores[numKD - 1] > 100) {
+              const excess = kdScores[numKD - 1] - 100;
+              kdScores[numKD - 1] = 100;
+              kdScores[kdIndex] -= excess;
+            }
+          }
+        }
+        
+        const actualTotal = kdScores.reduce((sum, score) => sum + score, 0);
+        const average = actualTotal / numKD;
+        
+        generatedScoresV3.push({
+          name: student.name,
+          scores: kdScores,
+          average: Math.round(average * 10) / 10,
+          targetScore: targetScore,
+          total: actualTotal,
+          targetTotal: targetTotal
+        });
+      }
+    }
+    
+    function displayResultsV3() {
+      const table = document.getElementById('results-table-v3');
+      const numKD = parseInt(document.getElementById('num-kd-v3').value);
+      
+      let html = '<thead><tr style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">';
+      html += '<th>Nama Siswa</th>';
+      
+      for (let i = 1; i <= numKD; i++) {
+        html += `<th>KD ${i}</th>`;
+      }
+      
+      html += '<th>Total</th><th>Rata-rata</th><th>Target</th><th>Selisih</th></tr></thead><tbody>';
+      
+      generatedScoresV3.forEach((student, index) => {
+        const bgColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
+        html += `<tr style="background-color: ${bgColor};">`;
+        html += `<td style="background-color: ${bgColor}; font-weight: bold; text-align: left; padding-left: 12px;">${student.name}</td>`;
+        
+        student.scores.forEach(score => {
+          html += `<td>${score}</td>`;
+        });
+        
+        const diff = (student.average - student.targetScore).toFixed(1);
+        const diffColor = Math.abs(diff) < 0.1 ? '#10b981' : '#f59e0b';
+        
+        html += `<td style="font-weight: bold; color: #6366f1;">${student.total}</td>`;
+        html += `<td style="font-weight: bold; color: #10b981;">${student.average}</td>`;
+        html += `<td style="font-weight: bold;">${student.targetScore}</td>`;
+        html += `<td style="font-weight: bold; color: ${diffColor};">${diff >= 0 ? '+' : ''}${diff}</td>`;
+        html += '</tr>';
+      });
+      
+      html += '</tbody>';
+      table.innerHTML = html;
+    }
+    
+    function copyTableToClipboardV3() {
+      const numKD = parseInt(document.getElementById('num-kd-v3').value);
+      let text = 'Nama Siswa\t';
+      
+      for (let i = 1; i <= numKD; i++) {
+        text += `KD ${i}\t`;
+      }
+      text += 'Total\tRata-rata\tTarget\tSelisih\n';
+      
+      generatedScoresV3.forEach(student => {
+        text += `${student.name}\t`;
+        student.scores.forEach(score => {
+          text += `${score}\t`;
+        });
+        const diff = (student.average - student.targetScore).toFixed(1);
+        text += `${student.total}\t${student.average}\t${student.targetScore}\t${diff}\n`;
+      });
+      
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        textArea.remove();
+        showCopyMessage('✓ Data berhasil di-copy! Paste ke Excel dengan Ctrl+V atau Cmd+V');
+      } catch (err) {
+        textArea.remove();
+        showCopyMessage('❌ Gagal copy. Coba lagi atau gunakan browser lain.', true);
+      }
+    }
+
+    function showCopyMessage(message, isError = false) {
+      const msg = document.createElement('div');
+      msg.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-4 rounded-lg shadow-2xl font-bold text-white z-50 ${isError ? 'bg-red-600' : 'bg-green-600'}`;
+      msg.textContent = message;
+      document.body.appendChild(msg);
+      
+      setTimeout(() => {
+        msg.style.transition = 'opacity 0.3s';
+        msg.style.opacity = '0';
+        setTimeout(() => msg.remove(), 300);
+      }, 3000);
+    }
+
+    function updateWeightTotal() {
+      const weightUH = parseFloat(document.getElementById('weight-uh-v4').value) || 0;
+      const weightTA = parseFloat(document.getElementById('weight-ta-v4').value) || 0;
+      const total = weightUH + weightTA;
+      const totalDisplay = document.getElementById('weight-total-v4');
+      
+      totalDisplay.textContent = `Total: ${total}%`;
+      
+      if (Math.abs(total - 100) < 0.01) {
+        totalDisplay.className = 'mt-3 text-center font-bold text-lg text-green-600';
+      } else {
+        totalDisplay.className = 'mt-3 text-center font-bold text-lg text-red-600';
+      }
+    }
+    
+    function generateStudentInputsV4() {
+      const numStudents = parseInt(document.getElementById('num-students-v4').value);
+      const container = document.getElementById('student-inputs-v4');
+      container.innerHTML = '';
+      
+      for (let i = 1; i <= numStudents; i++) {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-4 bg-gray-50 p-4 rounded-lg';
+        div.innerHTML = `
+          <label class="font-semibold text-gray-700 w-32">Siswa ${i}:</label>
+          <input type="text" id="student-name-v4-${i}" placeholder="Nama siswa" class="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none">
+          <input type="number" id="student-target-v4-${i}" placeholder="Target nilai akhir" min="0" max="100" value="75" class="w-32 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none">
+        `;
+        container.appendChild(div);
+      }
+    }
+    
+    function handleExcelImportV4(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          
+          const studentData = [];
+          for (let i = 1; i < jsonData.length; i++) {
+            const row = jsonData[i];
+            if (row[0] && row[1] !== undefined) {
+              studentData.push({
+                name: String(row[0]).trim(),
+                target: parseFloat(row[1]) || 0
+              });
+            }
+          }
+          
+          if (studentData.length === 0) {
+            showImportStatusV4('❌ Tidak ada data valid di file Excel!', true);
+            return;
+          }
+          
+          const numStudents = parseInt(document.getElementById('num-students-v4').value);
+          const limitedData = studentData.slice(0, numStudents);
+          
+          limitedData.forEach((student, index) => {
+            const nameInput = document.getElementById(`student-name-v4-${index + 1}`);
+            const targetInput = document.getElementById(`student-target-v4-${index + 1}`);
+            if (nameInput && targetInput) {
+              nameInput.value = student.name;
+              targetInput.value = student.target;
+            }
+          });
+          
+          showImportStatusV4(`✓ Berhasil import ${limitedData.length} data dari Excel!`, false);
+          
+        } catch (error) {
+          showImportStatusV4('❌ Gagal membaca file Excel! Pastikan format benar.', true);
+        }
+      };
+      
+      reader.readAsArrayBuffer(file);
+      event.target.value = '';
+    }
+    
+    function showImportStatusV4(message, isError) {
+      const statusDiv = document.getElementById('import-status-v4');
+      statusDiv.textContent = message;
+      statusDiv.className = `text-sm font-semibold ${isError ? 'text-red-600' : 'text-green-600'}`;
+      statusDiv.classList.remove('hidden');
+      
+      setTimeout(() => {
+        statusDiv.classList.add('hidden');
+      }, 5000);
+    }
+    
+    function collectStudentDataV4() {
+      const numStudents = parseInt(document.getElementById('num-students-v4').value);
+      studentTargetScoresV4 = [];
+      
+      for (let i = 1; i <= numStudents; i++) {
+        const name = document.getElementById(`student-name-v4-${i}`).value || `Siswa ${i}`;
+        const targetScore = parseFloat(document.getElementById(`student-target-v4-${i}`).value) || 75;
+        studentTargetScoresV4.push({ name, targetScore });
+      }
+    }
+    
+    function generateWeightedScores() {
+      const numKD = parseInt(document.getElementById('num-kd-v4').value);
+      const kkm = parseInt(document.getElementById('kkm-v4').value);
+      weightUH = parseFloat(document.getElementById('weight-uh-v4').value) / 100;
+      weightTA = parseFloat(document.getElementById('weight-ta-v4').value) / 100;
+      const numStudents = studentTargetScoresV4.length;
+      
+      generatedScoresV4 = [];
+      
+      for (let i = 0; i < numStudents; i++) {
+        const student = studentTargetScoresV4[i];
+        const targetFinal = student.targetScore;
+        
+        let uhScores = [];
+        let tesScore = 0;
+        let attempts = 0;
+        const maxAttempts = 100;
+        
+        while (attempts < maxAttempts) {
+          uhScores = [];
+          
+          for (let j = 0; j < numKD; j++) {
+            const fluctuation = Math.floor(Math.random() * 21) - 10;
+            let uhScore = targetFinal + fluctuation;
+            uhScore = Math.max(kkm, Math.min(100, uhScore));
+            uhScores.push(uhScore);
+          }
+          
+          const avgUH = uhScores.reduce((sum, s) => sum + s, 0) / numKD;
+          
+          tesScore = Math.round((targetFinal - (avgUH * weightUH)) / weightTA);
+          
+          if (tesScore >= kkm && tesScore <= 100) {
+            break;
+          }
+          
+          attempts++;
+        }
+        
+        if (attempts >= maxAttempts) {
+          uhScores = [];
+          for (let j = 0; j < numKD; j++) {
+            uhScores.push(targetFinal);
+          }
+          tesScore = targetFinal;
+        }
+        
+        const avgUH = uhScores.reduce((sum, s) => sum + s, 0) / numKD;
+        const finalScore = (avgUH * weightUH) + (tesScore * weightTA);
+        
+        generatedScoresV4.push({
+          name: student.name,
+          uhScores: uhScores,
+          tesScore: tesScore,
+          avgUH: Math.round(avgUH * 10) / 10,
+          finalScore: Math.round(finalScore * 10) / 10,
+          targetScore: targetFinal
+        });
+      }
+    }
+    
+    function displayResultsV4() {
+      const table = document.getElementById('results-table-v4');
+      const numKD = parseInt(document.getElementById('num-kd-v4').value);
+      const weightUHPercent = Math.round(weightUH * 100);
+      const weightTAPercent = Math.round(weightTA * 100);
+      
+      let html = '<thead><tr style="background: linear-gradient(135deg, #f97316 0%, #dc2626 100%); color: white;">';
+      html += '<th>Nama Siswa</th>';
+      
+      for (let i = 1; i <= numKD; i++) {
+        html += `<th>UH ${i}</th>`;
+      }
+      
+      html += `<th>Tes<br/>${weightTAPercent}%</th>`;
+      html += '<th>Nilai Akhir</th><th>Target</th><th>Selisih</th></tr></thead><tbody>';
+      
+      generatedScoresV4.forEach((student, index) => {
+        const bgColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
+        html += `<tr style="background-color: ${bgColor};">`;
+        html += `<td style="background-color: ${bgColor}; font-weight: bold; text-align: left; padding-left: 12px;">${student.name}</td>`;
+        
+        student.uhScores.forEach(score => {
+          html += `<td style="background-color: #dbeafe;">${score}</td>`;
+        });
+        
+        html += `<td style="font-weight: bold; background-color: #fef3c7;">${student.tesScore}</td>`;
+        
+        const diff = (student.finalScore - student.targetScore).toFixed(1);
+        const diffColor = Math.abs(diff) < 0.5 ? '#10b981' : '#f59e0b';
+        
+        html += `<td style="font-weight: bold; color: #10b981; background-color: #d1fae5;">${student.finalScore}</td>`;
+        html += `<td style="font-weight: bold;">${student.targetScore}</td>`;
+        html += `<td style="font-weight: bold; color: ${diffColor};">${diff >= 0 ? '+' : ''}${diff}</td>`;
+        html += '</tr>';
+      });
+      
+      html += '</tbody>';
+      table.innerHTML = html;
+    }
+    
+    function copyTableToClipboardV4() {
+      const numKD = parseInt(document.getElementById('num-kd-v4').value);
+      const weightUHPercent = Math.round(weightUH * 100);
+      const weightTAPercent = Math.round(weightTA * 100);
+      
+      let text = 'Nama Siswa\t';
+      
+      for (let i = 1; i <= numKD; i++) {
+        text += `UH${i}\t`;
+      }
+      text += `Tes(${weightTAPercent}%)\tNilai Akhir\tTarget\tSelisih\n`;
+      
+      generatedScoresV4.forEach(student => {
+        text += `${student.name}\t`;
+        student.uhScores.forEach(score => {
+          text += `${score}\t`;
+        });
+        const diff = (student.finalScore - student.targetScore).toFixed(1);
+        text += `${student.tesScore}\t${student.finalScore}\t${student.targetScore}\t${diff}\n`;
+      });
+      
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        textArea.remove();
+        showCopyMessage('✓ Data berhasil di-copy! Paste ke Excel dengan Ctrl+V atau Cmd+V');
+      } catch (err) {
+        textArea.remove();
+        showCopyMessage('❌ Gagal copy. Coba lagi atau gunakan browser lain.', true);
+      }
+    }
+    
+    document.getElementById('btn-version-1').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(1, 1);
+    });
+    
+    document.getElementById('btn-version-2').addEventListener('click', (e) => {
+      e.preventDefault();
+      generateAnswerKeyInputs();
+      showStep(1, 2);
+    });
+    
+    document.getElementById('btn-version-3').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(1, 3);
+    });
+    
+    document.getElementById('btn-version-4').addEventListener('click', (e) => {
+      e.preventDefault();
+      updateWeightTotal();
+      showStep(1, 4);
+    });
+    
+    document.getElementById('num-questions-v2').addEventListener('change', () => {
+      generateAnswerKeyInputs();
+    });
+    
+    document.getElementById('btn-back-v2-step1').addEventListener('click', (e) => {
+      e.preventDefault();
+      showVersionSelection();
+    });
+    
+    document.getElementById('btn-next-v2-step1').addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      const numQuestions = parseInt(document.getElementById('num-questions-v2').value);
+      const numStudents = parseInt(document.getElementById('num-students-v2').value);
+      
+      if (numQuestions < 1 || numQuestions > 50) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'Jumlah soal harus antara 1-50!';
+        document.getElementById('step-1-v2').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      if (numStudents < 1 || numStudents > 40) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'Jumlah siswa harus antara 1-40!';
+        document.getElementById('step-1-v2').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      collectAnswerKeys();
+      generateStudentInputsV2();
+      showStep(2, 2);
+    });
+    
+    document.getElementById('btn-back-v2-step2').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(1, 2);
+    });
+    
+    document.getElementById('btn-generate-v2').addEventListener('click', (e) => {
+      e.preventDefault();
+      collectStudentDataV2();
+      generateRandomAnswers();
+      displayResultsV2();
+      showStep(3, 2);
+    });
+    
+    document.getElementById('btn-back-v2-step3').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(2, 2);
+    });
+    
+    document.getElementById('btn-copy-table-v2').addEventListener('click', (e) => {
+      e.preventDefault();
+      copyTableToClipboardV2();
+    });
+    
+    document.getElementById('btn-reset-v2').addEventListener('click', (e) => {
+      e.preventDefault();
+      answerKeys = [];
+      studentTargetCorrect = [];
+      generatedAnswers = [];
+      showVersionSelection();
+    });
+    
+    document.getElementById('btn-back-v3-step1').addEventListener('click', (e) => {
+      e.preventDefault();
+      showVersionSelection();
+    });
+    
+    document.getElementById('btn-next-v3-step1').addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      const numKD = parseInt(document.getElementById('num-kd-v3').value);
+      const numStudents = parseInt(document.getElementById('num-students-v3').value);
+      const kkm = parseInt(document.getElementById('kkm-v3').value);
+      
+      if (numKD < 1 || numKD > 20) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'Jumlah KD harus antara 1-20!';
+        document.getElementById('step-1-v3').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      if (numStudents < 1 || numStudents > 40) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'Jumlah siswa harus antara 1-40!';
+        document.getElementById('step-1-v3').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      if (kkm < 0 || kkm > 100) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'KKM harus antara 0-100!';
+        document.getElementById('step-1-v3').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      generateStudentInputsV3();
+      showStep(2, 3);
+    });
+    
+    document.getElementById('btn-back-v3-step2').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(1, 3);
+    });
+    
+    document.getElementById('btn-generate-v3').addEventListener('click', (e) => {
+      e.preventDefault();
+      collectStudentDataV3();
+      generateFluctuatingScores();
+      displayResultsV3();
+      showStep(3, 3);
+    });
+    
+    document.getElementById('btn-back-v3-step3').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(2, 3);
+    });
+    
+    document.getElementById('btn-copy-table-v3').addEventListener('click', (e) => {
+      e.preventDefault();
+      copyTableToClipboardV3();
+    });
+    
+    document.getElementById('btn-reset-v3').addEventListener('click', (e) => {
+      e.preventDefault();
+      studentTargetScoresV3 = [];
+      generatedScoresV3 = [];
+      showVersionSelection();
+    });
+    
+    document.getElementById('weight-uh-v4').addEventListener('input', updateWeightTotal);
+    document.getElementById('weight-ta-v4').addEventListener('input', updateWeightTotal);
+    
+    document.getElementById('btn-back-v4-step1').addEventListener('click', (e) => {
+      e.preventDefault();
+      showVersionSelection();
+    });
+    
+    document.getElementById('btn-next-v4-step1').addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      const numKD = parseInt(document.getElementById('num-kd-v4').value);
+      const numStudents = parseInt(document.getElementById('num-students-v4').value);
+      const kkm = parseInt(document.getElementById('kkm-v4').value);
+      const weightUH = parseFloat(document.getElementById('weight-uh-v4').value);
+      const weightTA = parseFloat(document.getElementById('weight-ta-v4').value);
+      const totalWeight = weightUH + weightTA;
+      
+      if (numKD < 1 || numKD > 20) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'Jumlah KD harus antara 1-20!';
+        document.getElementById('step-1-v4').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      if (numStudents < 1 || numStudents > 40) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'Jumlah siswa harus antara 1-40!';
+        document.getElementById('step-1-v4').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      if (kkm < 0 || kkm > 100) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'KKM harus antara 0-100!';
+        document.getElementById('step-1-v4').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      if (Math.abs(totalWeight - 100) > 0.01) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'Total bobot harus 100%! Sekarang: ' + totalWeight + '%';
+        document.getElementById('step-1-v4').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      generateStudentInputsV4();
+      showStep(2, 4);
+    });
+    
+    document.getElementById('btn-back-v4-step2').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(1, 4);
+    });
+    
+    document.getElementById('btn-generate-v4').addEventListener('click', (e) => {
+      e.preventDefault();
+      collectStudentDataV4();
+      generateWeightedScores();
+      displayResultsV4();
+      showStep(3, 4);
+    });
+    
+    document.getElementById('btn-back-v4-step3').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(2, 4);
+    });
+    
+    document.getElementById('btn-copy-table-v4').addEventListener('click', (e) => {
+      e.preventDefault();
+      copyTableToClipboardV4();
+    });
+    
+    document.getElementById('btn-reset-v4').addEventListener('click', (e) => {
+      e.preventDefault();
+      studentTargetScoresV4 = [];
+      generatedScoresV4 = [];
+      showVersionSelection();
+    });
+    
+    document.getElementById('excel-upload').addEventListener('change', handleExcelImport);
+    document.getElementById('excel-upload-v2').addEventListener('change', handleExcelImportV2);
+    document.getElementById('excel-upload-v3').addEventListener('change', handleExcelImportV3);
+    document.getElementById('excel-upload-v4').addEventListener('change', handleExcelImportV4);
+    
+    document.getElementById('btn-next-step1').addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      const numQuestions = parseInt(document.getElementById('num-questions').value);
+      const maxScore = parseInt(document.getElementById('max-score').value);
+      const numStudents = parseInt(document.getElementById('num-students').value);
+      
+      if (numQuestions < 1 || numQuestions > 20) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'Jumlah soal harus antara 1-20!';
+        document.getElementById('step-1').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      if (numStudents < 1 || numStudents > 40) {
+        const msg = document.createElement('div');
+        msg.className = 'mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-red-800 text-center font-semibold';
+        msg.textContent = 'Jumlah siswa harus antara 1-40!';
+        document.getElementById('step-1').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+      }
+      
+      setupData = { numQuestions, maxScore, numStudents };
+      generateStudentInputs();
+      showStep(2);
+    });
+
+    document.getElementById('btn-back-step2').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(1);
+    });
+
+    document.getElementById('btn-generate').addEventListener('click', (e) => {
+      e.preventDefault();
+      collectStudentData();
+      generateRandomScores();
+      displayResults();
+      showStep(3);
+    });
+
+    document.getElementById('btn-back-step3').addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(2);
+    });
+
+    document.getElementById('btn-copy-table').addEventListener('click', (e) => {
+      e.preventDefault();
+      copyTableToClipboard();
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', (e) => {
+      e.preventDefault();
+      setupData = {};
+      studentFinalScores = [];
+      generatedScores = [];
+      showVersionSelection();
+    });
+
+    onConfigChange(defaultConfig);
+    showVersionSelection();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a7f89c7609bff89',t:'MTc2NDcyNzkzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
